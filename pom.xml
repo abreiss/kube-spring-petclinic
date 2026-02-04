@@ -411,5 +411,11 @@
       </build>
     </profile>
   </profiles>
-
+  <distributionManagement>
+    <repository>
+      <id>nexus</id>
+      <name>Nexus Repo</name>
+      <url>http://nexus:8081/repository/petclinic-maven/</url>
+    </repository>
+  </distributionManagement>
 </project>

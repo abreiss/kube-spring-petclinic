@@ -25,20 +25,20 @@ jobs:
           java-version: ${{matrix.java}}
           distribution: 'temurin'
           cache: maven
+          server-id: nexus
+          server-username: NEXUS_USERNAME
+          server-password: NEXUS_PASSWORD
       - name: Build with Maven Wrapper
         run: ./mvnw -B package
 
-      - name: Upload JAR to Nexus (raw hosted)
+      - name: Publish to Nexus (Maven deploy)
         env:
-          NEXUS_BASE_URL: http://nexus:8081
-          NEXUS_REPOSITORY: petclinic-raw
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_DEPLOY_URL: http://nexus:8081/repository/petclinic-maven/
         run: |
           set -euo pipefail
-          JAR_PATH="$(ls -1 target/*.jar | grep -v 'original-' | head -n 1)"
           : "${NEXUS_USERNAME:?Missing secret NEXUS_USERNAME}"
           : "${NEXUS_PASSWORD:?Missing secret NEXUS_PASSWORD}"
-          DEST_URL="${NEXUS_BASE_URL}/repository/${NEXUS_REPOSITORY}/spring-petclinic/${GITHUB_SHA}/$(basename "$JAR_PATH")"
-          echo "Uploading $(basename "$JAR_PATH") to ${DEST_URL}"
-          curl -f -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "$JAR_PATH" "$DEST_URL"
+          ./mvnw -B -DskipTests deploy \
+            -DaltDeploymentRepository=nexus::default::${NEXUS_DEPLOY_URL}
