@@ -12,7 +12,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64]
     strategy:
       matrix:
         java: [ '17' ]
@@ -23,7 +23,24 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{matrix.java}}
-          distribution: 'adopt'
+          distribution: 'temurin'
           cache: maven
       - name: Build with Maven Wrapper
         run: ./mvnw -B package
+
+      - name: Upload JAR to Nexus (raw hosted)
+        env:
+          NEXUS_BASE_URL: http://nexus:8081
+          NEXUS_REPOSITORY: petclinic-raw
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          JAR_PATH="$(ls -1 target/*.jar | grep -v 'original-' | head -n 1)"
+          if [[ -z "${NEXUS_USERNAME}" || -z "${NEXUS_PASSWORD}" ]]; then
+            echo "Missing Nexus credentials. Set secrets NEXUS_USERNAME and NEXUS_PASSWORD." >&2
+            exit 1
+          fi
+          DEST_URL="${NEXUS_BASE_URL}/repository/${NEXUS_REPOSITORY}/spring-petclinic/${GITHUB_SHA}/$(basename "$JAR_PATH")"
+          echo "Uploading $(basename "$JAR_PATH") to ${DEST_URL}"
+          curl -f -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "$JAR_PATH" "$DEST_URL"
