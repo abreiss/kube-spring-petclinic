@@ -35,10 +35,8 @@ jobs:
         env:
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-          NEXUS_DEPLOY_URL: http://nexus:8081/repository/petclinic-maven/
         run: |
           set -euo pipefail
           : "${NEXUS_USERNAME:?Missing secret NEXUS_USERNAME}"
           : "${NEXUS_PASSWORD:?Missing secret NEXUS_PASSWORD}"
-          ./mvnw -B -DskipTests deploy \
-            -DaltDeploymentRepository=nexus::default::${NEXUS_DEPLOY_URL}
+          ./mvnw -B -DskipTests deploy
